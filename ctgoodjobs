@@ -1,0 +1,46 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import time
+import re
+
+
+df = pd.DataFrame()
+
+
+kw = 'python'
+baseUrl = 'https://www.ctgoodjobs.hk/ctjob/listing/joblist.asp?keywordForQuickSearch=' + kw
+baseUrl
+
+html = requests.get(baseUrl).text
+soup = BeautifulSoup(html, 'lxml')
+page = int(re.findall(r'\d+', html)[0])
+page
+
+#print(soup.prettify())
+
+for i in range(page):
+    url = baseUrl + '&page=' + str(i+1)
+    print(url + ' 下載中...')
+    html = requests.get(url).text
+    soup = BeautifulSoup(html, 'lxml')
+    job = soup.find_all('div', {'class':"row jl-row jl-de"})
+    
+
+    for j in job:
+       job_title = j.find('div').find('a').text
+       url = j.find('div').find('a').get('href')
+       company = j.find('h3').find('a').text
+       area = j.find('li').text
+    
+       data = [{'職位名稱':job_title,
+                '工作網址':url,
+                '公司名稱':company,
+                '工作地點':area}]
+                
+                
+       df = df.append(data, ignore_index=True)
+        
+    # time.sleep(5)
+
+df.to_excel('ctgoodjobs.xlsx', index=False)
